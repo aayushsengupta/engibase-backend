@@ -134,31 +134,35 @@ async def ask_question(data: QueryData):
     except Exception as e:
         return {"answer": f"Error: {str(e)}"}
     
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI()
+
+# This is the "Universal Permission" block
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # This allows your website to talk to the AI
+    allow_origins=["*"],  # Allows your local 127.0.0.1 and Netlify
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 @app.post("/generate-resume")
 async def generate_resume(request: ResumeRequest):
-    # Construct a prompt for the AI
-    prompt = f"""
-    Create a professional engineering resume in Markdown format for:
-    Name: {request.name}
-    Email: {request.email}
-    Skills: {request.skills}
-    Experience: {request.experience}
-    Education: {request.education}
-    """
-    
-    # Use your existing Groq/AI logic here
-    chat_completion = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-8b-instant",
-    )
-    
+    try:
+        # 1. Check if the prompt construction is clean
+        user_prompt = f"Create a resume for {request.name}. Skills: {request.skills}."
+
+        # 2. Use the ACTIVE model name
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile", 
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+        
+        return {"resume": completion.choices[0].message.content}
+    except Exception as e:
+        # This will print the actual error in your Render logs if it fails
+        print(f"CRITICAL ERROR: {e}")
+        return {"error": str(e)}
     return {"resume": chat_completion.choices[0].message.content}
