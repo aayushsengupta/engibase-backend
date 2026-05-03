@@ -16,6 +16,13 @@ app.add_middleware(
 
 client = Groq(api_key="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")
 
+class ResumeRequest(BaseModel):
+    name: str
+    email: str
+    skills: str
+    experience: str
+    education: str
+
 class ResumeData(BaseModel):
     name: str
     email: str
@@ -135,3 +142,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/generate-resume")
+async def generate_resume(request: ResumeRequest):
+    # Construct a prompt for the AI
+    prompt = f"""
+    Create a professional engineering resume in Markdown format for:
+    Name: {request.name}
+    Email: {request.email}
+    Skills: {request.skills}
+    Experience: {request.experience}
+    Education: {request.education}
+    """
+    
+    # Use your existing Groq/AI logic here
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-8b-8192",
+    )
+    
+    return {"resume": chat_completion.choices[0].message.content}
