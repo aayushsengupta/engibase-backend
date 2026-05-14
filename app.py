@@ -62,17 +62,19 @@ async def generate_resume(request: ResumeRequest):
 # 6. STUDENT QUERY ROUTE
 @app.post("/query")
 async def ask_question(data: QueryData):
-    # Customized for your university context
-    system_instruction = "You are the Wheresmynotes Academic AI for Dibrugarh University."
     try:
+        # Use the 'client' that is already initialized at the top of your script
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": system_instruction},
+                {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": data.question}
             ],
         )
         return {"answer": completion.choices[0].message.content}
+    except Exception as e:
+        print(f"QUERY ERROR: {e}")
+        return {"answer": f"Backend Error: {str(e)}"}
     except Exception as e:
         print(f"QUERY ERROR: {e}")
         return {"answer": f"Error: {str(e)}"}
