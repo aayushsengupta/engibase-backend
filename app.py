@@ -22,7 +22,7 @@ app.add_middleware(
 # 3. Initialize Groq Client
 # It looks for "GROQ_API_KEY" in Render's environment or your local .env file
 # Replace 'YOUR_NEW_KEY_HERE' with your key if testing locally without .env
-api_key = os.environ.get("GROQ_API_KEY", "YOUR_NEW_KEY_HERE")
+api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
 # 4. Data Models
