@@ -81,3 +81,8 @@ if __name__ == "__main__":
     import uvicorn
     # Use port 10000 for Render compatibility
     uvicorn.run(app, host="0.0.0.0", port=10000)
+api_key = os.environ.get("GROQ_API_KEY")
+if api_key:
+    print(f"API Key loaded! Starts with: {api_key[:6]}")
+else:
+    print("API Key is MISSING!")
