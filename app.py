@@ -49,16 +49,17 @@ async def generate_resume(request: ResumeRequest):
 
 @app.post("/query")
 async def ask_question(data: QueryData):
+    # This function should ONLY use the 'client' defined at the top of the file
     try:
-        # USES THE SAME 'client' AS THE RESUME
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", # Using the same model that works for the resume
+            model="llama-3.3-70b-versatile", # Use the EXACT same model as the resume
             messages=[
-                {"role": "system", "content": "You are the Wheresmynotes Academic AI."},
+                {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": data.question}
             ],
         )
         return {"answer": completion.choices[0].message.content}
     except Exception as e:
-        # If this returns 401, it means the 'client' above is somehow invalid
-        return {"answer": f"API Error: {str(e)}"}
+        # If it still fails, this will show the error in your Render logs
+        print(f"QUERY FAIL: {str(e)}")
+        return {"answer": f"Error: {str(e)}"}
