@@ -5,12 +5,11 @@ from pydantic import BaseModel
 from groq import Groq
 from dotenv import load_dotenv
 
-# 1. Load Environment Variables
 load_dotenv()
 
 app = FastAPI()
 
-# 2. CORS Setup (Essential for Vercel/Frontend communication)
+# Essential for the frontend to talk to the backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,13 +18,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Initialize Groq Client
-# It looks for "GROQ_API_KEY" in Render's environment or your local .env file
-# Replace 'YOUR_NEW_KEY_HERE' with your key if testing locally without .env
+# --- CRITICAL FIX START ---
+# Only initialize the client ONCE at the top level.
+# This ensures every function uses the key from Render's Environment Variables.
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key)
+# --- CRITICAL FIX END ---
 
-# 4. Data Models
 class ResumeRequest(BaseModel):
     name: str
     email: str
@@ -36,55 +35,30 @@ class ResumeRequest(BaseModel):
 class QueryData(BaseModel):
     question: str
 
-# 5. RESUME ROUTE
 @app.post("/generate-resume")
 async def generate_resume(request: ResumeRequest):
-    prompt = f"""
-    You are an expert resume builder. Create a professional, clean resume for:
-    NAME: {request.name}
-    EMAIL: {request.email}
-    SKILLS: {request.skills}
-    EXPERIENCE: {request.experience}
-    EDUCATION: {request.education}
-    
-    Format the output clearly using Markdown. Use bold headers and bullet points.
-    """
     try:
+        # Uses the 'client' defined above
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile", 
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": f"Create a resume for {request.name}..."}]
         )
         return {"resume": completion.choices[0].message.content}
     except Exception as e:
-        print(f"RESUME ERROR: {e}")
         return {"error": str(e)}
 
-# 6. STUDENT QUERY ROUTE
 @app.post("/query")
 async def ask_question(data: QueryData):
     try:
-        # Use the 'client' that is already initialized at the top of your script
+        # USES THE SAME 'client' AS THE RESUME
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.3-70b-versatile", # Using the same model that works for the resume
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "You are the Wheresmynotes Academic AI."},
                 {"role": "user", "content": data.question}
             ],
         )
         return {"answer": completion.choices[0].message.content}
     except Exception as e:
-        print(f"QUERY ERROR: {e}")
-        return {"answer": f"Backend Error: {str(e)}"}
-    except Exception as e:
-        print(f"QUERY ERROR: {e}")
-        return {"answer": f"Error: {str(e)}"}
-
-if __name__ == "__main__":
-    import uvicorn
-    # Use port 10000 for Render compatibility
-    uvicorn.run(app, host="0.0.0.0", port=10000)
-api_key = os.environ.get("GROQ_API_KEY")
-if api_key:
-    print(f"API Key loaded! Starts with: {api_key[:6]}")
-else:
-    print("API Key is MISSING!")
+        # If this returns 401, it means the 'client' above is somehow invalid
+        return {"answer": f"API Error: {str(e)}"}
