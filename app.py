@@ -36,15 +36,47 @@ class QueryData(BaseModel):
     question: str
 
 @app.post("/generate-resume")
+
 async def generate_resume(request: ResumeRequest):
+
+    prompt = f"""
+
+    You are an expert resume builder. Create a professional, clean resume for:
+
+    NAME: {request.name}
+
+    EMAIL: {request.email}
+
+    SKILLS: {request.skills}
+
+    EXPERIENCE: {request.experience}
+
+    EDUCATION: {request.education}
+
+   
+
+    Format the output clearly using Markdown. Use bold headers and bullet points.
+
+    """
+
     try:
-        # Uses the 'client' defined above
+
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", 
-            messages=[{"role": "user", "content": f"Create a resume for {request.name}..."}]
+
+            model="llama-3.3-70b-versatile",
+
+            messages=[{"role": "user", "content": prompt}]
+
         )
+
+        # Match your JavaScript result.resume
+
         return {"resume": completion.choices[0].message.content}
+
     except Exception as e:
+
+        print(f"RESUME ERROR: {e}")
+
         return {"error": str(e)}
 
 @app.post("/query")
